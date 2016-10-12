@@ -12,25 +12,35 @@ import java.util.List;
 
 public class PermissionRequester {
 
-     private static final int REQUEST_CODE = 153;
+  static final int REQUEST_CODE_LOCATION = 153;
+    public static final int REQUEST_CODE_READ_CONTACTS = 155;
+    public static final int REQUEST_CODE_CAMERA = 157;
 
     public enum Group {
-        ACCESS_CONTACTS {
+        LOCATION {
             public String[] get() {
-                return new String[]{Manifest.permission.READ_CONTACTS,
-                        Manifest.permission.WRITE_CONTACTS};
+                return new String[]{
+                        Manifest.permission.ACCESS_COARSE_LOCATION,
+                        Manifest.permission.ACCESS_FINE_LOCATION};
             }
         },
-        STORAGE {
+        CAMERA {
+            @Override
             public String[] get() {
-                return new String[]{Manifest.permission.READ_EXTERNAL_STORAGE,
-                        Manifest.permission.WRITE_EXTERNAL_STORAGE};
+                return new String[]{Manifest.permission.CAMERA};
+            }
+        },
+         READ_CONTACTS {
+            public String[] get() {
+                return new String[]{
+                        Manifest.permission.READ_CONTACTS};
             }
         };
-            public abstract String[] get();
+
+        public abstract String[] get();
     }
 
-    public static int checkSelfPermissions(Context context, Group group) {
+    public static List<String> checkSelfPermissions(Context context, Group group) {
         List<String> neededRequests = new ArrayList<>();
 
         for (String permission : group.get()) {
@@ -38,13 +48,20 @@ public class PermissionRequester {
                 neededRequests.add(permission);
             }
         }
-        return neededRequests.size();
+        return neededRequests;
     }
 
-    public static void requestPermissions(Context context, Group group) {
-        ActivityCompat.requestPermissions((AppCompatActivity) context, group.get(), REQUEST_CODE);
+    public static void requestPermissions(Context context, Group group, int requestCode) {
+        List<String> perms = checkSelfPermissions(context, group);
+        if (perms.size() > 0)
+            ActivityCompat.requestPermissions((AppCompatActivity) context, toArray(perms), requestCode);
     }
 
+    public static void requestFragmentPermissions(Fragment fragment, Group group, int code) {
+        List<String> perms = checkSelfPermissions(fragment.getActivity(), group);
+        if (perms.size() > 0)
+            FragmentCompat.requestPermissions(fragment, toArray(perms), code);
+    }
     public static boolean showRationale(Context context, Group group) {
         boolean show = false;
         for (String str : group.get()) {
@@ -54,6 +71,12 @@ public class PermissionRequester {
             }
         }
         return show;
+    }
+     
+    private static String[] toArray(List<String> list) {
+        String[] arr = new String[list.size()];
+        return list.toArray(arr);
+
     }
 
 }
